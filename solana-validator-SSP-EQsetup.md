@@ -25,19 +25,15 @@ su - sol
 
 Partition NVME into ~570gb (swap) and 3000gb (ledger and accounts) - for EQ1 Spec 3.8TB NVME
 
-Adding new process using GPT partition with gdisk for larger filessytems. Make larger 3.5 (or 3.8) TB drive via gdisk then partition using fdisk as normal. You have to delete the original GPT in order to select partition 1 with fdisk
+Adding new process using GPT partition with gdisk for larger filessytems.
 
 Enter the "n" then hit enter
-Etner the "1" then hit enter...and so on
+Enter the "1" then hit enter...and so on
 ```
 sudo gdisk /dev/nvme0n1
-n, 1, enter (2048 default first sector), enter (max sector available), enter (8300 default), p, w, y
+n, 1, enter (2048 default first sector), +3000G, enter (8300 default), n, 2, enter (default first available sector), enter (max sector available), enter (8300 default), w, y
 ```
-note the first step in the next section is deleting the partition we just created above
-```
-sudo fdisk /dev/nvme0n1
-d, n, 1, enter (2048 default first sector), +3000G, n, 2, enter (default first available sector), enter (max sector available), w
-```
+
 Now make filessytems, directories, delete and make new swap, etc.
 ```
 sudo fdisk -l 
@@ -144,11 +140,6 @@ Finish making directories
 ```
 sudo mkdir /mnt/ramdrive
 
-sudo mkdir /mt/
-
-sudo mkdir /mt/ledger
-
-sudo mkdir /mt/ledger/validator-ledger
 sudo mkdir -p /mt/ledger/validator-ledger
 
 sudo mkdir /mt/solana-accounts
@@ -158,7 +149,6 @@ sudo mkdir ~/log
 
 Edit permissions and make sure user sol is the owner for solana directories
 ```
-sudo chown sol:sol /mt/solana-accounts
 sudo chown -R sol:sol /mt/*
 
 sudo chown sol:sol ~/log
