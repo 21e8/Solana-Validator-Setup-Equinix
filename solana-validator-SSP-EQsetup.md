@@ -149,6 +149,7 @@ sudo mkdir /mt/
 sudo mkdir /mt/ledger
 
 sudo mkdir /mt/ledger/validator-ledger
+sudo mkdir -p /mt/ledger/validator-ledger
 
 sudo mkdir /mt/solana-accounts
 
@@ -158,12 +159,9 @@ sudo mkdir ~/log
 Edit permissions and make sure user sol is the owner for solana directories
 ```
 sudo chown sol:sol /mt/solana-accounts
-
-sudo chown sol:sol /mt/ledger
+sudo chown -R sol:sol /mt/*
 
 sudo chown sol:sol ~/log
-
-sudo chown sol:sol /mt/ledger/validator-ledger
 ```
 
 Set up the firewall / ssh
