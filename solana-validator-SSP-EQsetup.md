@@ -113,11 +113,11 @@ also make sure UUID is correct as they can change
 
 Once you update the UUIDs below (which are just examples) to the ones you gathered from your machine, paste this into the fstab file mentioned above **underneath the existing file entries**.
 ```
-#GenesysGo RPC config
+#Validator config
 UUID=5c24e241-239c-4aa5-baa6-fbb6fb44a847 /mt  auto nosuid,nodev,nofail 0 0
 UUID=87645b08-85c2-4fe2-9974-1bda4de317d9 /mnt  auto nosuid,nodev,nofail 0 0
 #ramdrive and swap
-#tmpfs /mnt/ramdrive tmpfs rw,size=80G 0 0
+tmpfs /mnt/ramdrive tmpfs rw,size=80G 0 0
 /mnt/swapfile none swap sw 0 0
 ```
 save / exit  
@@ -128,11 +128,11 @@ The complete file should look like this (but with your own UUIDs):
 ```
 UUID=e6eafc79-85c3-4208-82ac-41b73d75cd31       /       ext4    errors=remount-ro       0       1
 UUID=4b8f8a7b-8b8f-4984-a341-5770f8b365a1       none    swap    none    0       0
-#GenesysGo RPC config
+#Validator config
 UUID=5c24e241-239c-4aa5-baa6-fbb6fb44a847 /mt  auto nosuid,nodev,nofail 0 0
 UUID=87645b08-85c2-4fe2-9974-1bda4de317d9 /mnt  auto nosuid,nodev,nofail 0 0
 #ramdrive and swap
-#tmpfs /mnt/ramdrive tmpfs rw,size=60G 0 0
+tmpfs /mnt/ramdrive tmpfs rw,size=80G 0 0
 /mnt/swapfile none swap sw 0 0
 ```
 
