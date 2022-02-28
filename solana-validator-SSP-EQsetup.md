@@ -25,29 +25,27 @@ su - sol
 
 Partition NVME into ~570gb (swap) and 3000gb (ledger and accounts) - for EQ1 Spec 3.8TB NVME
 
-Adding new process using GPT partition with gdisk for larger filessytems. Make larger 3.5 (or 3.8) TB drive via gdisk then partition using fdisk as normal. You have to delete the original GPT in order to select partition 1 with fdisk
+Adding new process using GPT partition with gdisk for larger filessytems.
 
 Enter the "n" then hit enter
-Etner the "1" then hit enter...and so on
+Enter the "1" then hit enter...and so on
 ```
 sudo gdisk /dev/nvme0n1
-n, 1, enter (2048 default first sector), enter (max sector available), enter (8300 default), p, w, y
+n, 1, enter (2048 default first sector), +3000G, enter (8300 default), n, 2, enter (default first available sector), enter (max sector available), 8200, w, y
 ```
-note the first step in the next section is deleting the partition we just created above
-```
-sudo fdisk /dev/nvme0n1
-d, n, 1, enter (2048 default first sector), +3000G, n, 2, enter (default first available sector), enter (max sector available), w
-```
-Now make filessytems, directories, delete and make new swap, etc.
+
+Now make filesystems, directories, delete and make new swap, etc.
 ```
 sudo fdisk -l 
 
 sudo mkfs -t ext4 /dev/nvme0n1p1
 
-sudo mkfs -t ext4 /dev/nvme0n1p2
+sudo mount /dev/nvme0n1p1 /mt
+
+sudo mkswap /dev/nvme0n1p2
 
 ```
-Discover the swap directory, turn it off, make a new one and turn it on
+Discover the old swap directory, turn it off, and turn it on the new one.
 ```
 sudo swapon --show
 ```
@@ -58,28 +56,14 @@ It could be /dev/sdb2 or /dev/sdc2 so edit the next line below to the proper sd*
 It will almost always be the one showig 1.9GB of swap size
 ```
 sudo swapoff /dev/sda2
-
-sudo sed --in-place '/swap.img/d' /etc/fstab
-
-sudo mount /dev/nvme0n1p2 /mnt/
-
-sudo mount /dev/nvme0n1p1 /mt
-
-sudo dd if=/dev/zero of=/mnt/swapfile bs=1M count=350k
 ```
-It can take up to 5 minutes for the machine to make this size swapfile. Sit tight.
-
-Next is setting permissions and adding the swapfile to fstab, then edit the swapiness to 10.
+Next is editing the swappiness to 10 and turning our new swap partition on.
 ```
-sudo chmod 600 /mnt/swapfile
-
-sudo mkswap /mnt/swapfile
-
 echo 'vm.swappiness=10' | sudo tee --append /etc/sysctl.conf > /dev/null
 
 sudo sysctl -p
 
-sudo swapon --all --verbose
+sudo swapon /dev/nvme0n1p2
 ```
 Capture nvme0n1p1 and nvme0n1p2 UUIDs to edit into /etc/fstab
 
@@ -91,34 +75,39 @@ You should see something similar to this:
 UUID=e6eafc79-85c3-4208-82ac-41b73d75cd31       /       ext4    errors=remount-ro       0       1
 UUID=4b8f8a7b-8b8f-4984-a341-5770f8b365a1       none    swap    none    0       0
 
-These are the default OS drives and should be left alone. Do not overwrite them. You will need to add the two new UUID's of the two partitions you just made (nvmeon1p1 and nvme0n1p2).
+These are the default OS drives and we will be modifying swap later. Do **not** modify the entry of root, the ext4 partition mounted at /. You will need to use the UUID's of the two partitions you just made (nvmeon1p1 and nvme0n1p2).
 
 `ctrl + x` to exit
 
 ```
 lsblk -f
 ```
-Copy the section that looks similar to the below nvme0n1 partition tree and past it into a notepad (or VScode, etc) so that you can copy/past into fstab properly. We just need the UUID's so in the example below copy "5c24e241-239c-4aa5-baa6-fbb6fb44a847" and "87645b08-85c2-4fe2-9974-1bda4de317d9" and note which partition each belongs to (/mt and /mnt respectively). Your UUIDs will be different!
+Copy the section that looks similar to the below nvme0n1 partition tree and past it into a notepad (or VScode, etc) so that you can copy/past into fstab properly. We just need the UUID's so in the example below copy "5c24e241-239c-4aa5-baa6-fbb6fb44a847" and "37215cf2-244c-4f2e-98f9-6f327694fe7e" and note which partition each belongs to (/mt and swap respectively). Your UUIDs will be different!
 ```
 nvme0n1
 ├─nvme0n1p1 ext4         5c24e241-239c-4aa5-baa6-fbb6fb44a847    2.8T     0% /mt
-└─nvme0n1p2 ext4         87645b08-85c2-4fe2-9974-1bda4de317d9    9.5G    88% /mnt
+└─nvme1n1p2 swap   1     37215cf2-244c-4f2e-98f9-6f327694fe7e                [SWAP]
 ```
 These UUID above need to be edited into the fstab config below
 ```
 sudo nano /etc/fstab
 ```
-Edit this into fstab below the current UUIDs. Delete or hash out the old swap UUID if needed. Leave the first UUIDs (OS related), just **append these lines under whatever current UUIDs are listed** as the ones already in the file are boot/OS related.
+Leave the first UUID alone (OS related), on the swap partition line, while your UUID values will be different, edit the previous one to have your new UUID similar to from
+```
+UUID=4b8f8a7b-8b8f-4984-a341-5770f8b365a1       none    swap    none    0       0
+```
+To be updated becoming
+```
+UUID=37215cf2-244c-4f2e-98f9-6f327694fe7e       none    swap    none    0       0
+```
+  Now **append these lines under whatever current UUIDs are listed** as the ones already in the file are boot/OS related.
 also make sure UUID is correct as they can change
 
-Once you update the UUIDs below (which are just examples) to the ones you gathered from your machine, paste this into the fstab file mentioned above **underneath the existing file entries**.
 ```
 #Validator config
 UUID=5c24e241-239c-4aa5-baa6-fbb6fb44a847 /mt  auto nosuid,nodev,nofail 0 0
-UUID=87645b08-85c2-4fe2-9974-1bda4de317d9 /mnt  auto nosuid,nodev,nofail 0 0
 #ramdrive and swap
 tmpfs /mnt/ramdrive tmpfs rw,size=80G 0 0
-/mnt/swapfile none swap sw 0 0
 ```
 save / exit  
 
@@ -127,28 +116,22 @@ save / exit
 The complete file should look like this (but with your own UUIDs):
 ```
 UUID=e6eafc79-85c3-4208-82ac-41b73d75cd31       /       ext4    errors=remount-ro       0       1
-UUID=4b8f8a7b-8b8f-4984-a341-5770f8b365a1       none    swap    none    0       0
+UUID=37215cf2-244c-4f2e-98f9-6f327694fe7e       none    swap    none    0       0
 #Validator config
 UUID=5c24e241-239c-4aa5-baa6-fbb6fb44a847 /mt  auto nosuid,nodev,nofail 0 0
-UUID=87645b08-85c2-4fe2-9974-1bda4de317d9 /mnt  auto nosuid,nodev,nofail 0 0
 #ramdrive and swap
 tmpfs /mnt/ramdrive tmpfs rw,size=80G 0 0
-/mnt/swapfile none swap sw 0 0
 ```
 
-Mount everything.
+Create the ramdrive folder and mount everything.
 ```
+sudo mkdir /mnt/ramdrive
+
 sudo mount --all --verbose
 ```
 Finish making directories
 ```
-sudo mkdir /mnt/ramdrive
-
-sudo mkdir /mt/
-
-sudo mkdir /mt/ledger
-
-sudo mkdir /mt/ledger/validator-ledger
+sudo mkdir -p /mt/ledger/validator-ledger
 
 sudo mkdir /mt/solana-accounts
 
@@ -157,13 +140,9 @@ sudo mkdir ~/log
 
 Edit permissions and make sure user sol is the owner for solana directories
 ```
-sudo chown sol:sol /mt/solana-accounts
-
-sudo chown sol:sol /mt/ledger
+sudo chown -R sol:sol /mt/*
 
 sudo chown sol:sol ~/log
-
-sudo chown sol:sol /mt/ledger/validator-ledger
 ```
 
 Set up the firewall / ssh
