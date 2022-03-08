@@ -215,7 +215,7 @@ solana config set --keypair ~/validator-keypair.json
 ```
 
 
-Transfer 0.1 SOL into the ~/validator-keypair.json (to create vote account and at the same time set the withdrawl authority)
+Transfer 0.1 SOL into the ~/validator-keypair.json (to create vote account and at the same time set the withdrawal authority)
 ```
 solana create-vote-account ~/vote-account-keypair.json ~/validator-keypair.json ~/authority-keypair.json
 
