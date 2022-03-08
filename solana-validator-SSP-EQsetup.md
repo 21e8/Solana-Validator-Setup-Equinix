@@ -384,7 +384,7 @@ solana-keygen pubkey ~/authority-keypair.json
 ```
 Remember to use the `solana --help` feature to learn syntax. You can look up specifc commands for example:
 ```
-solana create-stake-acccount --help
+solana create-stake-account --help
 ```
 #
 Watchtower Monitoring (using the Shadowy Super Coder DAO's validator ID as an example)
